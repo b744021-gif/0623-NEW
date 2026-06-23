@@ -1,1 +1,277 @@
-hi
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AB 圖 — 找不同（網頁版）</title>
+  <style>
+    :root{--gap:18px;--mark-size:34px;--found-color:#e53935}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans TC",Arial;margin:20px;background:#fbfbfd;color:#111}
+    h1{margin:0 0 12px}
+    .layout{display:flex;gap:var(--gap);flex-wrap:wrap;align-items:flex-start}
+    .panel{background:#fff;border:1px solid #e6e6e6;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+    .images{display:flex;gap:12px;flex-direction:row}
+    .image-wrap{position:relative;width:420px;max-width:44vw;border-radius:6px;overflow:hidden}
+    .image-wrap img, .image-wrap svg{display:block;width:100%;height:auto;user-select:none}
+    .overlay{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none}
+    .marker{position:absolute;width:var(--mark-size);height:var(--mark-size);border-radius:50%;background:var(--found-color);transform:translate(-50%,-50%);pointer-events:none;border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,0.18)}
+    .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+    button{padding:8px 12px;border-radius:8px;border:1px solid #cfcfcf;background:#fff;cursor:pointer}
+    button.primary{background:#0b79ff;color:#fff;border-color:#0765d6}
+    .status{margin-left:auto;font-weight:700}
+    .hint{font-size:14px;color:#555;margin-top:8px}
+    .small{font-size:13px;color:#666}
+    footer{margin-top:14px;color:#666;font-size:13px}
+    @media (max-width:860px){ .images{flex-direction:column} .image-wrap{max-width:92vw} .status{margin-left:0} }
+    .file-row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+    input[type=file]{font-size:13px}
+  </style>
+</head>
+<body>
+  <h1>AB 圖 — 找不同（網頁版）</h1>
+
+  <div class="panel layout" style="width:100%;align-items:flex-start">
+    <div style="flex:1">
+      <div class="images" id="images">
+        <figure class="image-wrap" data-side="A" aria-label="左圖 A">
+          <!-- default embedded SVG (so file works offline) -->
+          <img alt="圖 A" id="imgA" src="" draggable="false" />
+          <div class="overlay" id="overlayA"></div>
+        </figure>
+
+        <figure class="image-wrap" data-side="B" aria-label="右圖 B">
+          <img alt="圖 B" id="imgB" src="" draggable="false" />
+          <div class="overlay" id="overlayB"></div>
+        </figure>
+      </div>
+
+      <div class="controls">
+        <button id="resetBtn">重置</button>
+        <button id="revealBtn" class="primary">揭示答案</button>
+        <button id="hintBtn">提示</button>
+
+        <div class="status" id="status">已找到 0 / 3</div>
+      </div>
+
+      <div class="file-row small">
+        <label>替換圖片（可選）：</label>
+        <input type="file" id="fileA" accept="image/*">
+        <input type="file" id="fileB" accept="image/*">
+        <button id="useDefaultsBtn">還原內建範例</button>
+      </div>
+
+      <div class="hint small" id="hintText">提示：點擊任一圖中你認為不同的位置來標記。</div>
+      <footer>支援觸控與鍵盤：按 R 重置、按 H 揭示答案。</footer>
+    </div>
+
+    <div class="panel" style="width:320px">
+      <h3>玩法說明</h3>
+      <ul>
+        <li>遊戲目標：在兩張相似圖片中找到三處差異。</li>
+        <li>點擊任一張圖片中你認為不同的地方，找到後會在兩張圖相對位置各顯示一個紅色標記並計分。</li>
+        <li>「揭示答案」會顯示所有差異；「重置」可重新開始。</li>
+      </ul>
+
+      <h4>差異設定</h4>
+      <p class="small">差異區域以百分比坐標定義（相對於圖片寬高），可用於任何解析度或替換圖片。</p>
+    </div>
+  </div>
+
+  <script>
+    // --------------- 預設兩張圖（內嵌 SVG 做為 data URL） ---------------
+    const svgA = `data:image/svg+xml;utf8,${encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+        <rect width="100%" height="100%" fill="#f1f8ff"/>
+        <rect x="110" y="160" width="200" height="140" fill="#ffd59a" stroke="#b36c00" stroke-width="4"/>
+        <polygon points="110,160 210,90 310,160" fill="#ffb66b" stroke="#b36c00" stroke-width="4"/>
+        <rect x="360" y="200" width="18" height="100" fill="#7b4b2b"/>
+        <circle cx="369" cy="180" r="54" fill="#4caf50"/>
+        <circle cx="510" cy="70" r="34" fill="#ffd54f"/>
+        <rect x="150" y="200" width="48" height="44" fill="#fff" stroke="#b36c00" stroke-width="3"/>
+        <line x1="150" y1="222" x2="198" y2="222" stroke="#b36c00" stroke-width="2"/>
+        <line x1="174" y1="200" x2="174" y2="244" stroke="#b36c00" stroke-width="2"/>
+        <rect x="320" y="310" width="120" height="16" fill="#c07b4b"/>
+        <polygon points="60,80 90,100 60,120 30,100" fill="#ff4d6d"/>
+        <line x1="60" y1="120" x2="60" y2="155" stroke="#333" stroke-width="2"/>
+        <circle cx="60" cy="145" r="4" fill="#0a0"/>
+      </svg>
+    `)}`;
+
+    const svgB = `data:image/svg+xml;utf8,${encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+        <rect width="100%" height="100%" fill="#f1f8ff"/>
+        <rect x="110" y="160" width="200" height="140" fill="#ffd59a" stroke="#b36c00" stroke-width="4"/>
+        <polygon points="110,160 210,90 310,160" fill="#ffb66b" stroke="#b36c00" stroke-width="4"/>
+        <rect x="360" y="200" width="18" height="100" fill="#7b4b2b"/>
+        <rect x="320" y="110" width="98" height="92" fill="#4caf50"/>
+        <circle cx="510" cy="70" r="28" fill="#ffd54f"/>
+        <circle cx="510" cy="70" r="36" fill="none" stroke="#ffb74d" stroke-width="3"/>
+        <rect x="150" y="200" width="48" height="44" fill="#ffe" stroke="#b36c00" stroke-width="3"/>
+        <line x1="150" y1="222" x2="198" y2="222" stroke="#b36c00" stroke-width="2"/>
+        <line x1="174" y1="200" x2="174" y2="244" stroke="#b36c00" stroke-width="2"/>
+        <rect x="320" y="310" width="120" height="16" fill="#c07b4b"/>
+        <polygon points="60,80 90,100 60,120 30,100" fill="#ff4d6d"/>
+        <line x1="60" y1="120" x2="60" y2="155" stroke="#333" stroke-width="2"/>
+      </svg>
+    `)}`;
+
+    // --------------- 差異區域（百分比座標：x,y,w,h 皆為 0..100） ---------------
+    // 這裡定義三個差異：樹形、太陽、風箏尾巴小圓
+    const diffZones = [
+      { id: 'tree-shape', x: (320/600)*100, y: (110/400)*100, w: (120/600)*100, h: (120/400)*100, desc: '樹的葉子形狀不同（圓 vs 方）' },
+      { id: 'sun-size-ring', x: (470/600)*100, y: (34/400)*100, w: (80/600)*100, h: (80/400)*100, desc: '太陽尺寸/外圈不同' },
+      { id: 'kite-tail-dot', x: (52/600)*100, y: (136/400)*100, w: (16/600)*100, h: (16/400)*100, desc: '風箏尾巴的小圓在 B 圖被移除' }
+    ];
+
+    // --------------- DOM ---------------
+    const imgA = document.getElementById('imgA');
+    const imgB = document.getElementById('imgB');
+    const overlayA = document.getElementById('overlayA');
+    const overlayB = document.getElementById('overlayB');
+    const statusEl = document.getElementById('status');
+    const hintText = document.getElementById('hintText');
+    const resetBtn = document.getElementById('resetBtn');
+    const revealBtn = document.getElementById('revealBtn');
+    const hintBtn = document.getElementById('hintBtn');
+    const fileA = document.getElementById('fileA');
+    const fileB = document.getElementById('fileB');
+    const useDefaultsBtn = document.getElementById('useDefaultsBtn');
+
+    // --------------- 遊戲狀態 ---------------
+    const found = new Set();
+
+    function updateStatus(){
+      statusEl.textContent = `已找到 ${found.size} / ${diffZones.length}` + (found.size === diffZones.length ? ' — 完成！🎉' : '');
+    }
+
+    // --------------- 工具函式 ---------------
+    function setDefaultImages(){
+      imgA.src = svgA;
+      imgB.src = svgB;
+    }
+
+    function clearMarkers(){
+      overlayA.innerHTML = '';
+      overlayB.innerHTML = '';
+      found.clear();
+      updateStatus();
+    }
+
+    // 在 overlay 上放一個標記（用百分比位置）
+    function placeMarker(overlay, percentX, percentY, id){
+      const rect = overlay.getBoundingClientRect();
+      const el = document.createElement('div');
+      el.className = 'marker';
+      el.style.left = (percentX) + '%';
+      el.style.top = (percentY) + '%';
+      el.dataset.diffId = id;
+      overlay.appendChild(el);
+    }
+
+    // 檢查點選是否落在任一差異區（根據圖片尺寸轉為百分比）
+    function checkClickAgainstZones(percentX, percentY){
+      for(const z of diffZones){
+        if(percentX >= z.x && percentX <= z.x + z.w && percentY >= z.y && percentY <= z.y + z.h){
+          return z;
+        }
+      }
+      return null;
+    }
+
+    // 處理點擊（在某一張圖上點）
+    function handleImageClick(evt, side){
+      // side: 'A' 或 'B'
+      const img = side === 'A' ? imgA : imgB;
+      const overlay = side === 'A' ? overlayA : overlayB;
+      const rect = img.getBoundingClientRect();
+      const px = (evt.clientX - rect.left) / rect.width * 100;
+      const py = (evt.clientY - rect.top) / rect.height * 100;
+      if(px < 0 || py < 0 || px > 100 || py > 100) return;
+
+      const hit = checkClickAgainstZones(px, py);
+      if(hit){
+        if(found.has(hit.id)){
+          showToast('你已經找到這裡了');
+          return;
+        }
+        // 記錄並在兩張圖放標記（使用區域中心作為位置）
+        found.add(hit.id);
+        const centerX = hit.x + hit.w/2;
+        const centerY = hit.y + hit.h/2;
+        placeMarker(overlayA, centerX, centerY, hit.id);
+        placeMarker(overlayB, centerX, centerY, hit.id);
+        showToast(`找到：${hit.desc}`);
+        updateStatus();
+      } else {
+        showToast('不是差異的位置，再找找看');
+      }
+    }
+
+    function revealAll(){
+      // 在兩張圖各放上所有差異標記
+      overlayA.innerHTML = '';
+      overlayB.innerHTML = '';
+      for(const z of diffZones){
+        const cx = z.x + z.w/2;
+        const cy = z.y + z.h/2;
+        placeMarker(overlayA, cx, cy, z.id);
+        placeMarker(overlayB, cx, cy, z.id);
+        found.add(z.id);
+      }
+      updateStatus();
+    }
+
+    // 簡短提示訊息（覆寫 hintText）
+    let toastTimer = null;
+    function showToast(text){
+      hintText.textContent = text;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=>{ hintText.textContent = '提示：點擊任一圖中你認為不同的位置來標記。'; }, 2400);
+    }
+
+    // --------------- 綁定事件 ---------------
+    function attachHandlers(){
+      // 允許 overlay 捕捉點擊（pointer events on overlays)
+      overlayA.style.pointerEvents = 'auto';
+      overlayB.style.pointerEvents = 'auto';
+      overlayA.addEventListener('click', (e)=> handleImageClick(e,'A'));
+      overlayB.addEventListener('click', (e)=> handleImageClick(e,'B'));
+
+      resetBtn.addEventListener('click', ()=>{ clearMarkers(); showToast('已重置'); });
+      revealBtn.addEventListener('click', ()=>{ revealAll(); showToast('已揭示所有差異'); });
+      hintBtn.addEventListener('click', ()=>{ showToast('提示：往畫面左上（風箏）、右上（太陽）和中右（樹）找'); });
+
+      // 上傳自訂圖片
+      fileA.addEventListener('change', (e)=>{
+        const f = e.target.files[0];
+        if(f) imgA.src = URL.createObjectURL(f);
+        clearMarkers();
+      });
+      fileB.addEventListener('change', (e)=>{
+        const f = e.target.files[0];
+        if(f) imgB.src = URL.createObjectURL(f);
+        clearMarkers();
+      });
+      useDefaultsBtn.addEventListener('click', ()=>{ fileA.value = ''; fileB.value = ''; setDefaultImages(); clearMarkers(); });
+
+      // 快捷鍵
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'r' || e.key === 'R'){ clearMarkers(); showToast('已重置'); }
+        if(e.key === 'h' || e.key === 'H'){ revealAll(); showToast('已揭示所有差異'); }
+      });
+
+      // 為了在圖片尚未載入完成前取得正確大小，當圖片載入時調整 overlay 大小（overlay 使用絕對定位 cover）
+      [imgA, imgB].forEach(img=>{
+        img.addEventListener('load', ()=> {
+          // overlays are absolute and sized by CSS (left:0;top:0;right:0;bottom:0), no extra work needed
+        });
+      });
+    }
+
+    // --------------- 初始化 ---------------
+    setDefaultImages();
+    attachHandlers();
+    updateStatus();
+  </script>
+</body>
+</html>
