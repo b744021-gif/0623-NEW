@@ -1,1 +1,113 @@
-hi
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AB找不同遊戲</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 AB找不同遊戲</h1>
+        <p class="instruction">找出右邊圖片中有4處不同之處！點擊不同的地方。</p>
+        
+        <div class="game-info">
+            <div class="score-board">
+                找到: <span id="found">0</span>/4
+            </div>
+            <button id="resetBtn" class="reset-btn">重新開始</button>
+        </div>
+
+        <div class="game-container">
+            <div class="image-container">
+                <h3>圖片 A</h3>
+                <svg id="imageA" viewBox="0 0 400 400" class="game-image">
+                    <!-- 背景 -->
+                    <rect width="400" height="400" fill="#87CEEB"/>
+                    
+                    <!-- 太陽 -->
+                    <circle cx="350" cy="80" r="40" fill="#FFD700"/>
+                    
+                    <!-- 山 -->
+                    <polygon points="50,300 150,150 250,300" fill="#8B7355"/>
+                    <polygon points="250,300 350,150 450,300" fill="#A0826D"/>
+                    
+                    <!-- 樹1 -->
+                    <rect x="80" y="260" width="20" height="60" fill="#8B4513"/>
+                    <circle cx="90" cy="240" r="35" fill="#228B22"/>
+                    
+                    <!-- 樹2 -->
+                    <rect x="300" y="270" width="20" height="50" fill="#8B4513"/>
+                    <circle cx="310" cy="250" r="30" fill="#228B22"/>
+                    
+                    <!-- 草 -->
+                    <rect x="0" y="320" width="400" height="80" fill="#228B22"/>
+                    
+                    <!-- 花朵1 -->
+                    <circle cx="120" cy="340" r="5" fill="#FF69B4"/>
+                    <circle cx="115" cy="325" r="4" fill="#FFB6C1"/>
+                    <circle cx="125" cy="325" r="4" fill="#FFB6C1"/>
+                    <circle cx="110" cy="330" r="4" fill="#FFB6C1"/>
+                    <circle cx="130" cy="330" r="4" fill="#FFB6C1"/>
+                    
+                    <!-- 花朵2 -->
+                    <circle cx="280" cy="350" r="5" fill="#FF69B4"/>
+                    <circle cx="275" cy="335" r="4" fill="#FFB6C1"/>
+                    <circle cx="285" cy="335" r="4" fill="#FFB6C1"/>
+                    <circle cx="270" cy="340" r="4" fill="#FFB6C1"/>
+                    <circle cx="290" cy="340" r="4" fill="#FFB6C1"/>
+                </svg>
+            </div>
+
+            <div class="image-container">
+                <h3>圖片 B（找不同）</h3>
+                <svg id="imageB" viewBox="0 0 400 400" class="game-image">
+                    <!-- 背景 -->
+                    <rect width="400" height="400" fill="#87CEEB"/>
+                    
+                    <!-- 太陽（差異1：位置不同） -->
+                    <circle cx="330" cy="100" r="40" fill="#FFD700"/>
+                    
+                    <!-- 山 -->
+                    <polygon points="50,300 150,150 250,300" fill="#8B7355"/>
+                    <polygon points="250,300 350,150 450,300" fill="#A0826D"/>
+                    
+                    <!-- 樹1 -->
+                    <rect x="80" y="260" width="20" height="60" fill="#8B4513"/>
+                    <circle cx="90" cy="240" r="35" fill="#228B22"/>
+                    
+                    <!-- 樹2（差異2：樹葉顏色不同） -->
+                    <rect x="300" y="270" width="20" height="50" fill="#8B4513"/>
+                    <circle cx="310" cy="250" r="30" fill="#FF6347"/>
+                    
+                    <!-- 草 -->
+                    <rect x="0" y="320" width="400" height="80" fill="#228B22"/>
+                    
+                    <!-- 花朵1（差異3：花朵顏色不同） -->
+                    <circle cx="120" cy="340" r="5" fill="#FFD700"/>
+                    <circle cx="115" cy="325" r="4" fill="#FFED4E"/>
+                    <circle cx="125" cy="325" r="4" fill="#FFED4E"/>
+                    <circle cx="110" cy="330" r="4" fill="#FFED4E"/>
+                    <circle cx="130" cy="330" r="4" fill="#FFED4E"/>
+                    
+                    <!-- 花朵2 -->
+                    <circle cx="280" cy="350" r="5" fill="#FF69B4"/>
+                    <circle cx="275" cy="335" r="4" fill="#FFB6C1"/>
+                    <circle cx="285" cy="335" r="4" fill="#FFB6C1"/>
+                    <circle cx="270" cy="340" r="4" fill="#FFB6C1"/>
+                    <circle cx="290" cy="340" r="4" fill="#FFB6C1"/>
+                    
+                    <!-- 差異4：雲朵 -->
+                    <ellipse cx="100" cy="100" rx="50" ry="30" fill="#FFFFFF" opacity="0.8"/>
+                    <ellipse cx="130" cy="110" rx="40" ry="25" fill="#FFFFFF" opacity="0.8"/>
+                    <ellipse cx="70" cy="110" rx="35" ry="20" fill="#FFFFFF" opacity="0.8"/>
+                </svg>
+            </div>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
